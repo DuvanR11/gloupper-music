@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  name            String?
+  email           String?   @unique
+  emailVerified   DateTime?
+  image           String?
+  hashedPassword  String?
+  rol             String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  favoriteIds     String[] @db.ObjectId
+
+  accounts Account[]
+  centros Center[]
+  reservations Reservation[]
+  reviews Reviews[]
+  post Post[]
+}
+
+model Account {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String   @db.ObjectId
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.String
+  access_token       String?  @db.String
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.String
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+
+
+model Center {
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String @db.ObjectId
+  name           String
+  description    String
+  nit            String
+  image          String
+  images         String[]
+  category       String
+  departament    String
+  city           String
+  tag            String[]
+  wallet         Wallet?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  reservations Reservation[]
+  services Service[]
+  reviews Reviews[]
+  post Post[]
+  
+}
+
+model Wallet {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  balance  Int
+
+  centerId String   @unique @db.ObjectId
+  center   Center?  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  walletId  String    @db.ObjectId
+  amount    Float
+  type      String
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String
+  description  String
+  price        Int
+  image        String
+  images       String[]
+
+  centerId    String @db.ObjectId
+  center      Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+model Reservation {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String @db.ObjectId
+  centerId    String @db.ObjectId  
+  startDate   DateTime
+  endDate     DateTime
+  totalPrice  Int
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center      Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+model Chat {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  members    String[]
+  chat       Message[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Message {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String
+  text      String
+  chatId     String @db.ObjectId
+  chat       Chat @relation(fields: [chatId], references: [id])
+
+  createdAt  DateTime @default(now())
+}
+
+model Reviews {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @db.ObjectId
+  user      User @relation(fields: [userId], references: [id])
+  centerId  String @db.ObjectId 
+  center    Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  description      String
+  createdAt   DateTime @default(now())
+
+  @@index([userId, centerId])
+}
+
+model Post {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String @db.ObjectId
+  user       User @relation(fields: [userId], references: [id])
+  centerId   String @db.ObjectId 
+  center     Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  images      String[]
+  title       String
+  content     String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
